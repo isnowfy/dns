@@ -1,6 +1,8 @@
  # -*- coding: UTF-8 -*-
 
 import gevent
+import pickle
+import redis
 import dnslib
 from gevent import socket
 #import socket
@@ -23,13 +25,17 @@ def send_request(data):
 
 class Cache:
     def __init__(self):
-        self.c={}
+        self.c=redis.Redis()
     def get(self,key):
-        return self.c.get(key,None)
+        tmp=self.c.get(key)
+        if tmp:
+            return pickle.loads(self.c.get(key))
+        else: return None
     def set(self,key,value):
-        self.c[key]=value
+        self.c.set(key,pickle.dumps(value))
+        self.c.expire(key,60*60)
     def remove(self,key):
-        self.c.pop(key,None)
+        self.c.delete(key)
 
 cache=Cache()
 
